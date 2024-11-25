@@ -7,10 +7,8 @@ And the interfaces and controllers have been improved and rewritten by Soohoon Y
 
 We have integrated the core elements of two ROS packages(allegro_hand_description, allegro_hand_parameters) into a main package(allegro_hand_controllers).
 
-**For now, we support one additional action.**
+**For now, we support three additional action.**[24/11/26]
 - Visualize Allegro Hand V5 changing in real time using Rviz2.
-
-**We plan to update with more actions as they are developed:**
 - Save customize pose using MOVEIT2 and move to the saved pose.
 - Simply control hand with GUI tool instead of using keyboard.
 
@@ -137,4 +135,7 @@ Terminal 4:
 ros2 run allegro_hand_keyboards allegro_hand_keyboard --ros-args allegroHand_0/lib_cmd:=allegroHand_1/lib_cmd
 ~~~
 
+## MOVEIT & GUI [24/11/26]
 
+These two newly added features function identically to their ROS1 counterparts. Please refer to the ROS1 manual for guidance.
+Our latest Allegro Hand V5 ROS1 package :(https://github.com/Wonikrobotics-git/allegro_hand_ros_v5)
