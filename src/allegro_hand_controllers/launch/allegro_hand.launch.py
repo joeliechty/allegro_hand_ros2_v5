@@ -10,13 +10,25 @@ import getpass
 
 def generate_launch_description():
     allegro_hand_controllers_share = get_package_share_directory('allegro_hand_controllers')
-    setup_can0_script = os.path.join(allegro_hand_controllers_share, 'scripts', 'setup_can0.sh')
+    allegro_hand_moveit_share = get_package_share_directory('allegro_hand_moveit')
 
     # Declare launch argument
     declare_visualize_arg = DeclareLaunchArgument(
         'VISUALIZE',
         default_value='false',
         description='Flag to enable/disable visualization'
+    )
+    
+    declare_moveit_arg = DeclareLaunchArgument(
+        'MOVEIT',
+        default_value='false',
+        description='Flag to enable/disable moveit2'
+    )
+	
+    declare_gui_arg = DeclareLaunchArgument(
+        'GUI',
+        default_value='false',
+        description='Flag to enable/disable GUI'
     )
 
     declare_hand_arg = DeclareLaunchArgument(
@@ -85,19 +97,19 @@ def generate_launch_description():
         declare_polling_arg,
         declare_can_device_arg,
         declare_num_arg,
+        declare_moveit_arg,
+		declare_gui_arg,
         OpaqueFunction(function=setup_can),
         Node(
             package='allegro_hand_controllers',
             executable='allegro_node_grasp',
             output='screen',
             parameters=[{'hand_info/which_hand': LaunchConfiguration('HAND')}, # Pass HAND argument to parameter
-            		{'hand_info/which_type': LaunchConfiguration('TYPE')},
-            		{'comm/CAN_CH': LaunchConfiguration('CAN_DEVICE')}],
+			            {'hand_info/which_type': LaunchConfiguration('TYPE')},
+            		    {'comm/CAN_CH': LaunchConfiguration('CAN_DEVICE')}],
             arguments=[LaunchConfiguration('POLLING')],
-            remappings=[('allegroHand/lib_cmd',PythonExpression(["'allegroHand_",LaunchConfiguration('NUM'),"/lib_cmd'"])),
-            		('allegroHand/joint_states',PythonExpression(["'allegroHand_",LaunchConfiguration('NUM'),"/joint_states'"]))
-            
-            ]
+			remappings=[('allegroHand/lib_cmd',PythonExpression(["'allegroHand_",LaunchConfiguration('NUM'),"/lib_cmd'"])),
+            		('allegroHand/joint_states',PythonExpression(["'allegroHand_",LaunchConfiguration('NUM'),"/joint_states'"]))]
         ),
         Node(
             package='robot_state_publisher',
@@ -115,6 +127,17 @@ def generate_launch_description():
             PythonLaunchDescriptionSource(os.path.join(allegro_hand_controllers_share, 'launch', 'allegro_viz.launch.py')),
             condition=IfCondition(LaunchConfiguration('VISUALIZE')),
             launch_arguments={'NUM': LaunchConfiguration('NUM')}.items()
+        ),
+        # Include the demo.launch.py file if MOVEIT is true       
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join(allegro_hand_moveit_share, 'launch', 'demo.launch.py')),
+            condition=IfCondition(LaunchConfiguration('MOVEIT')),
+            launch_arguments={'HAND': LaunchConfiguration('HAND'),'TYPE': LaunchConfiguration('TYPE')}.items() 
+        ),
+		Node(
+            package='allegro_hand_gui',
+            executable='allegro_hand_gui_node',
+            output='screen',
+            condition=IfCondition(LaunchConfiguration('GUI'))
         )
-        
     ])
