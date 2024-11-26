@@ -64,6 +64,8 @@ cd ~/allegro_ws
 git clone https://github.com/Wonikrobotics-git/allegro_hand_ros2_v5.git
 ~~~
 
+## Before Build, please change setup_assistant filename to .setup_assistant in allegro_hand_moveit package
+
 4. Build.
 ~~~bash
 cd ~/allegro_ws
@@ -100,11 +102,23 @@ ros2 launch allegro_hand_controllers allegro_hand.launch.py HAND:=right|left TYP
 Optional arguments:
 ~~~
 VISUALIZE:=true|false (default is false)
+MOVEIT:=true|false (default is false)
+GUI:=true|false (default is false)
 ~~~
 
 - If you want to visualize Allegro Hand on Rviz2:
 ~~~bash
-ros2 launch allegro_hand_controllers allegro_hand.launch.py HAND:=right TYPE:=A VISUALIZE:=true
+ros2 launch allegro_hand_controllers allegro_hand.launch.py HAND:=right TYPE:=B VISUALIZE:=true
+~~~
+
+- If you want to use Allegro Hand with MOVEIT2:
+~~~bash
+ros2 launch allegro_hand_controllers allegro_hand.launch.py HAND:=right TYPE:=B MOVEIT:=true
+~~~
+
+- If you want to control Allegro Hand with GUI:
+~~~bash
+ros2 launch allegro_hand_controllers allegro_hand.launch.py HAND:=right TYPE:=B GUI:=true
 ~~~
 
 ## Control more than one hand
