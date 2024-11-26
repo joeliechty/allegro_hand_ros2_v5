@@ -1,10 +1,10 @@
 #include "allegro_node_grasp.h"
 #include "candrv/candrv.h"
-#include "bhand/BHand.h"
 #include "allegro_hand_driver/AllegroHandDrv.h"
 #include <iostream>
 #include <fstream>
 #include <ament_index_cpp/get_package_share_directory.hpp>
+#include <yaml-cpp/yaml.h>
 
 int flag = 0;
 
@@ -15,7 +15,7 @@ std::string data_path;
 
 // Define a map from string (received message) to eMotionType (Bhand controller grasp).
 std::map<std::string, eMotionType> bhand_grasps = {
-        {"home",     eMotionType_HOME},   // home position  
+        {"home",     eMotionType_HOME},   // home position
         {"grasp_3",  eMotionType_GRASP_3},  // grasp with 3 fingers
         {"grasp_4",  eMotionType_GRASP_4},  // grasp with 4 fingers
         {"pinch_it", eMotionType_PINCH_IT},  // pinch, index & thumb
@@ -53,14 +53,97 @@ void AllegroNodeGrasp::libCmdCallback(const std_msgs::msg::String::SharedPtr msg
     pBHand->SetMotionType(itr->second);
     RCLCPP_INFO(this->get_logger(), "motion type = %d", itr->second);
 
-    if (itr->second == 0 || itr->second == 1) {
+    if (itr->second == 0 ||itr->second == 1||itr->second == 8) {
       command_place(_can_handle);
     } else {
       command_pick(_can_handle);
     }
+
+ } else if (lib_cmd.find("pdControl") == 0) {
+
+  // Main behavior: apply the grasp directly from the map. Secondary behaviors can still be handled
+  // normally (case-by-case basis), note these should *not* be in the map.
+
+    RCLCPP_INFO(this->get_logger(), "CTRL: Heard: [pdControl]");
+    std::string num_str = lib_cmd.substr(9);
+
+    int pose_num = std::stoi(num_str);
+    RCLCPP_INFO(this->get_logger(), "PDControl Mode with pose number %d", pose_num);
+
+    std::string pkg_path = ament_index_cpp::get_package_share_directory("allegro_hand_controllers");
+    std::string file_path = pkg_path + "/pose/pose" + std::to_string(pose_num) + ".yaml";
+
+    std::ifstream infile(file_path);
+    if (!infile.good()) {
+      RCLCPP_WARN(this->get_logger(), "Pose file does not exist. Please select a different command.");
+      return;
+    }
+
+    YAML::Node node = YAML::LoadFile(file_path);
+    std::vector<double> positions = node["position"].as<std::vector<double>>();
+
+    for (int i = 0; i < DOF_JOINTS; i++) {
+      desired_position[i] = positions[i];
+    }
+
+    command_place(_can_handle);
+    pBHand->SetJointDesiredPosition(desired_position);
+    pBHand->SetMotionType(eMotionType_POSE_PD);
+
+  } else if(lib_cmd.compare("sensor") == 0) {
+    for (int i = 0; i < DOF_JOINTS; i++)
+      desired_position[i] = current_position[i];
+
+    command_pick(_can_handle);
+
+    pBHand->SetJointDesiredPosition(desired_position);
+    pBHand->SetMotionType(eMotionType_SAVE);
+
+  } else if (lib_cmd.find("moveit") == 0) {
+
+  // Main behavior: apply the grasp directly from the map. Secondary behaviors can still be handled
+  // normally (case-by-case basis), note these should *not* be in the map.
+
+    std::string pkg_path = ament_index_cpp::get_package_share_directory("allegro_hand_controllers");
+    std::string file_path = pkg_path + "/pose/pose_moveit.yaml";
+
+    std::ifstream infile(file_path);
+    if (!infile.good()) {
+      RCLCPP_WARN(this->get_logger(), "Pose file does not exist. Please select a different command.");
+      return;
+    }
+
+    YAML::Node node = YAML::LoadFile(file_path);
+    std::vector<double> positions = node["position"].as<std::vector<double>>();
+
+    for (int i = 0; i < DOF_JOINTS; i++) {
+      desired_position[i] = positions[i];
+    }
+    
+    command_place(_can_handle);
+    pBHand->SetJointDesiredPosition(desired_position);
+    pBHand->SetMotionType(eMotionType_POSE_PD);
   }
   else {
-    RCLCPP_WARN(this->get_logger(), "Unknown commanded grasp: %s.", lib_cmd.c_str());
+    std::string pkg_path = ament_index_cpp::get_package_share_directory("allegro_hand_controllers");
+        std::string file_path = pkg_path + "/pose/" + lib_cmd + ".yaml";
+
+    std::ifstream infile(file_path);
+    if (!infile.good()) {
+      RCLCPP_WARN(this->get_logger(), "Pose file does not exist. Please select a different command.");
+      return;
+    }
+    YAML::Node node = YAML::LoadFile(file_path);
+    std::vector<double> positions = node["position"].as<std::vector<double>>();
+
+    for (int i = 0; i < DOF_JOINTS; i++) {
+        desired_position[i] = positions[i];
+    }
+
+    command_place(_can_handle);
+    pBHand->SetJointDesiredPosition(desired_position);
+    pBHand->SetMotionType(eMotionType_POSE_PD);
+    //ROS_WARN("Unknown commanded grasp: %s.", lib_cmd.c_str());
   }
 }
 
@@ -69,9 +152,11 @@ void AllegroNodeGrasp::setJointCallback(const sensor_msgs::msg::JointState::Shar
   
   mutex->lock();
 
-  for (int i = 0; i < DOF_JOINTS; i++)
+  for (int i = 0; i < DOF_JOINTS && i < msg->position.size(); i++)
     desired_position[i] = msg->position[i];
   mutex->unlock();
+
+  command_place(_can_handle);
 
   pBHand->SetJointDesiredPosition(desired_position);
   pBHand->SetMotionType(eMotionType_JOINT_PD);

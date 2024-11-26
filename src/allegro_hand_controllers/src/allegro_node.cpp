@@ -50,7 +50,7 @@ AllegroNode::AllegroNode(const std::string nodeName, bool sim /* = false */)
     declare_parameter("comm/CAN_CH", "can0");
     auto can_ch = this->get_parameter("comm/CAN_CH").as_string();
     if (canDevice->init(can_ch)) {
-        //rclcpp::usleep(3000);
+        usleep(3000);
     }
     else {
         delete canDevice;
@@ -66,6 +66,10 @@ AllegroNode::AllegroNode(const std::string nodeName, bool sim /* = false */)
   joint_state_pub = this->create_publisher<sensor_msgs::msg::JointState>(JOINT_STATE_TOPIC, 3);
   joint_cmd_sub = this->create_subscription<sensor_msgs::msg::JointState>(DESIRED_STATE_TOPIC, 1, // queue size
                                  std::bind(&AllegroNode::desiredStateCallback, this, std::placeholders::_1));
+  time_sub = this->create_subscription<std_msgs::msg::Float32>("timechange", 1, // queue size
+                                 std::bind(&AllegroNode::ControltimeCallback, this, std::placeholders::_1));
+  force_sub = this->create_subscription<std_msgs::msg::Float32>("forcechange", 1, // queue size
+                                 std::bind(&AllegroNode::GraspforceCallback, this, std::placeholders::_1));
 
 }
 
@@ -80,6 +84,18 @@ void AllegroNode::desiredStateCallback(const sensor_msgs::msg::JointState::Share
   desired_joint_state = *msg;
   mutex->unlock();
 }
+
+void AllegroNode::ControltimeCallback(const std_msgs::msg::Float32::SharedPtr msg) {
+    motion_time = msg->data;
+    pBHand->SetMotiontime(motion_time);
+}
+
+void AllegroNode::GraspforceCallback(const std_msgs::msg::Float32::SharedPtr msg) {
+
+    force_get = msg->data;
+}
+
+
 
 void AllegroNode::publishData() {
   // current position, velocity and effort (torque) published
@@ -126,7 +142,6 @@ void AllegroNode::updateController() {
       // update joint positions:
       canDevice->getJointInfo(current_position);
 
-      //printf("current_position[12] = %lf, current_position[13] = %lf\n", current_position[12],current_position[13]);
       // low-pass filtering:
       for (int i = 0; i < DOF_JOINTS; i++) {
         current_position_filtered[i] = current_position[i];
@@ -139,7 +154,7 @@ void AllegroNode::updateController() {
 
       if (OperatingMode == 0) {
         if ((fingertip_sensor[0] + fingertip_sensor[1] + fingertip_sensor[3]) > 200)
-          f[0] = f[1] = f[2] = 2.0f;
+          f[0] = f[1] = f[2] = force_get;
         else
           f[0] = f[1] = f[2] = 1.0f;
       }
@@ -161,7 +176,7 @@ void AllegroNode::updateController() {
       frame++;
     }
 
-    if(frame == 1)
+        if(frame == 1)
     {
 
       if(whichHand.compare("left") == 0)
@@ -199,7 +214,6 @@ void AllegroNode::updateController() {
       }
       
     }
-
   }
 
   if (lEmergencyStop < 0) {

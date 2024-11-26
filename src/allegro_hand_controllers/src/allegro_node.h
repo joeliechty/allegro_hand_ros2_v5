@@ -12,16 +12,15 @@ using namespace allegro;
 #include <string>
 #include <chrono>
 #include <rclcpp/rclcpp.hpp>
-
+#include <std_msgs/msg/float32.hpp>
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "std_msgs/msg/u_int8_multi_array.hpp"
-
+#include "bhand/BHand.h"
 
 
 // Forward declaration.
 class AllegroHandDrv;
-
 #define ALLEGRO_CONTROL_TIME_INTERVAL 0.002
 
 // Topic names: current & desired JointState, named grasp to command.
@@ -40,6 +39,10 @@ class AllegroNode: public rclcpp::Node {
   void publishData();
 
   void desiredStateCallback(const sensor_msgs::msg::JointState::SharedPtr desired);
+
+  void ControltimeCallback(const std_msgs::msg::Float32::SharedPtr msg);
+
+  void GraspforceCallback(const std_msgs::msg::Float32::SharedPtr msg);
 
   virtual void updateController();
 
@@ -80,6 +83,9 @@ class AllegroNode: public rclcpp::Node {
   rclcpp::Time t_last_pub;
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_cmd_sub;
   rclcpp::Publisher<std_msgs::msg::UInt8MultiArray>::SharedPtr joint_temperature_pub;
+
+  rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr time_sub;
+  rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr force_sub;
   bool joint_temperature_pending;
   OnSetParametersCallbackHandle::SharedPtr param_callback_handle;
   // Store the current and desired joint states.
@@ -99,6 +105,13 @@ class AllegroNode: public rclcpp::Node {
   // Flags
   int lEmergencyStop = 0;
   long frame = 0;
+
+  double motion_time = 1.0;//
+  double force_get = 2.0f;//
+
+  BHand *pBHand = NULL;
 };
+
+
 
 #endif //PROJECT_ALLEGRO_NODE_COMMON_H
