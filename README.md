@@ -7,7 +7,7 @@ And the interfaces and controllers have been improved and rewritten by Soohoon Y
 
 We have integrated the core elements of two ROS packages(allegro_hand_description, allegro_hand_parameters) into a main package(allegro_hand_controllers).
 
-**For now, we support three additional action.**[24/11/26]
+**For now, we support three additional action.**
 - Visualize Allegro Hand V5 changing in real time using Rviz2.
 - Save customize pose using MOVEIT2 and move to the saved pose.
 - Simply control hand with GUI tool instead of using keyboard.
