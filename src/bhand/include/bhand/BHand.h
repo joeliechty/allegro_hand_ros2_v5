@@ -52,6 +52,7 @@ enum eMotionType
 	eMotionType_PINCH_MT,			///< pinching using middle finger and thumb
 	eMotionType_ENVELOP,			///< enveloping
 	eMotionType_JOINT_PD,			///< joint pd control
+	eMotionType_POSE_PD,			///< custom pose pd control
 	eMotionType_GRAVITY_COMP,		///< gravity compensation
 	eMotionType_SAVE,				///< saving current pose
 	eMotionType_A,					///< set Hand type to A(NON-GEARED)
@@ -200,6 +201,9 @@ public:
 	void SetOrientation(double roll, double pitch, double yaw);
 	void SetOrientation(double R[9]);
 
+	/**
+	 * Set moving motion time (Home, Joint PD)
+	 */
 	void SetMotiontime(double time);
 
 
@@ -221,6 +225,7 @@ private:
 	void Motion_PinchMT();
 	void Motion_Envelop();
 	void Motion_JointPD();
+	void Motion_PosePD();
 	void Motion_Save();
 
 private:
