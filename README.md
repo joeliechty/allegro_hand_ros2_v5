@@ -64,7 +64,7 @@ cd ~/allegro_ws
 git clone https://github.com/Wonikrobotics-git/allegro_hand_ros2_v5.git
 ~~~
 
-## Before Build, please change setup_assistant filename to .setup_assistant in allegro_hand_moveit package
+**Before Build, please change setup_assistant filename to .setup_assistant in allegro_hand_moveit package**
 
 4. Build.
 ~~~bash
