@@ -152,18 +152,7 @@ ros2 run allegro_hand_keyboards allegro_hand_keyboard --ros-args allegroHand_0/l
 These newly added feature function identically to their ROS1 counterparts. Please refer to the ROS1 manual for guidance.
 Our latest Allegro Hand V5 ROS1 package :(https://github.com/Wonikrobotics-git/allegro_hand_ros_v5)
 
-We provide the MOVEIT2 package for the default Right-Hand B-Type configuration. If you want to change the hand type, please follow these steps:
-Open the allegro_hand_right.urdf.xacro file located in the config folder of the allegro_hand_moveit package.
-
-1. Modify the following line to reference the desired URDF file:
-~~~bash
-<xacro:include filename="$(find allegro_hand_controllers)/urdf/allegro_hand_description_right_B.urdf" />
-~~~
-2. For example, to switch to A-Type, change it to:
-~~~bash
-<xacro:include filename="$(find allegro_hand_controllers)/urdf/allegro_hand_description_right_A.urdf" />
-~~~
-3. Save the file and rebuild the package.
+**Make sure to install MOVEIT2 first in your PC and should install several additional packages to operate it**
 
 ## GUI
 
