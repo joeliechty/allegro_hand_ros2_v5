@@ -27,6 +27,8 @@ These packages are tested on ROS2 Humble(Ubuntu 22.04). It will likely not work 
 	- grasp : Apply various pre-defined grasps or customized poses.
 - allegro_hand_driver : Main driver for sending and receiving data with the Allegro Hand.
 - allegro_hand_keyboard : Node that sends the command to control Allegro Hand. All commands need to be pre-defined.
+- allegro_hand_moveit : Provide MOVEIT2 package for Allegro Hand V5.
+- allegro_hand_gui : Node that control the allegro hand with gui program.
 - bhand : Library files for the predefined grasps and actions., available on 64 bit versions.
 
 ## Install the PCAN driver
