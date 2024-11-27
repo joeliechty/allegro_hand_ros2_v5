@@ -153,6 +153,7 @@ These newly added feature function identically to their ROS1 counterparts. Pleas
 Our latest Allegro Hand V5 ROS1 package :(https://github.com/Wonikrobotics-git/allegro_hand_ros_v5)
 
 **Make sure to install MOVEIT2 first in your PC and should install several additional packages to operate it**
+You can find installation guide in here : [MOVEIT2](https://moveit.picknik.ai/main/doc/tutorials/getting_started/getting_started.html)
 
 ## GUI
 
