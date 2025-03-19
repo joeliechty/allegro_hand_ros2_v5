@@ -31,7 +31,7 @@ If you want to use hand directly via RS-485 connection with manipulator or else,
 - Parity bit : none
 - Timeout : 0
 
-Check out our RS-485 protocol in manual :
+Check out our RS-485 protocol in manual(Soon be updated)
 
 ## Packages
 
@@ -73,6 +73,7 @@ mkdir allegro_ws
 ~~~bash
 sudo apt-get update
 sudo apt-get install ros-<distro>-xacro
+sudo apt install ros-<distro>-moveit
 ~~~
 
 3. Download ROS2 package for Allegro Hand V5 using below command.
