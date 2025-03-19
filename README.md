@@ -21,18 +21,6 @@ These packages are tested on ROS2 Humble(Ubuntu 22.04). It will likely not work 
 - Official Allegro Hand Website : https://www.allegrohand.com/
 - Community Forum :  https://www.allegrohand.com/forum
 
-## Using Hand directly via RS-485 connection without a PC
-
-If you want to use hand directly via RS-485 connection with manipulator or else, you need to set port configures :
-
-- Baudrate : 115200 bps
-- Data bit : 8 bits
-- Stop bit : 1 bit
-- Parity bit : none
-- Timeout : 0
-
-Check out our RS-485 protocol in manual(Soon be updated)
-
 ## Packages
 
 **From Allegro Hand V5, the hand is fully based on torque controller.** 
