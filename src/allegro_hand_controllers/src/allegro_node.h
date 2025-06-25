@@ -16,8 +16,9 @@ using namespace allegro;
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "std_msgs/msg/u_int8_multi_array.hpp"
+#include "std_msgs/msg/int32_multi_array.hpp"
 #include "bhand/BHand.h"
-
+#include <vector>
 
 // Forward declaration.
 class AllegroHandDrv;
@@ -28,6 +29,7 @@ const std::string JOINT_STATE_TOPIC = "allegroHand/joint_states";
 const std::string DESIRED_STATE_TOPIC = "allegroHand/joint_cmd";
 const std::string LIB_CMD_TOPIC = "allegroHand/lib_cmd";
 const std::string JOINT_TEMPERATURE_TOPIC = "allegroHand/joint_tempeartures";
+const std::string TACTILE_SENSOR_TOPIC = "allegroHand/tactile_sensors";
 
 class AllegroNode: public rclcpp::Node {
  public:
@@ -80,6 +82,7 @@ class AllegroNode: public rclcpp::Node {
 
   // ROS stuff
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_state_pub;
+  rclcpp::Publisher<std_msgs::msg::Int32MultiArray>::SharedPtr tactile_sensor_pub;
   rclcpp::Time t_last_pub;
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_cmd_sub;
   rclcpp::Publisher<std_msgs::msg::UInt8MultiArray>::SharedPtr joint_temperature_pub;
@@ -92,6 +95,8 @@ class AllegroNode: public rclcpp::Node {
   sensor_msgs::msg::JointState current_joint_state;
   sensor_msgs::msg::JointState desired_joint_state;
   std_msgs::msg::UInt8MultiArray current_joint_temperature;
+
+  std_msgs::msg::Int32MultiArray tactile_sensor;
 
   // ROS Time
   rclcpp::Time tstart;

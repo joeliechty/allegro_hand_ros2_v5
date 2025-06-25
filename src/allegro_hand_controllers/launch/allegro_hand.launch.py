@@ -30,6 +30,12 @@ def generate_launch_description():
         default_value='false',
         description='Flag to enable/disable GUI'
     )
+	
+    declare_sim_arg = DeclareLaunchArgument(
+        'ISAAC',
+        default_value='false',
+        description='Flag to enable/disable ISAAC SIM2REAL'
+    )
 
     declare_hand_arg = DeclareLaunchArgument(
         'HAND',
@@ -39,7 +45,7 @@ def generate_launch_description():
     
     declare_type_arg = DeclareLaunchArgument(
         'TYPE',
-        default_value='A',
+        default_value='B',
         description='Specify which type to use: A(non-geared) or B(geared)'
     )
 
@@ -99,6 +105,7 @@ def generate_launch_description():
         declare_num_arg,
         declare_moveit_arg,
 		declare_gui_arg,
+		declare_sim_arg,
         OpaqueFunction(function=setup_can),
         Node(
             package='allegro_hand_controllers',
@@ -108,8 +115,15 @@ def generate_launch_description():
 			            {'hand_info/which_type': LaunchConfiguration('TYPE')},
             		    {'comm/CAN_CH': LaunchConfiguration('CAN_DEVICE')}],
             arguments=[LaunchConfiguration('POLLING')],
-			remappings=[('allegroHand/lib_cmd',PythonExpression(["'allegroHand_",LaunchConfiguration('NUM'),"/lib_cmd'"])),
-            		('allegroHand/joint_states',PythonExpression(["'allegroHand_",LaunchConfiguration('NUM'),"/joint_states'"]))]
+			remappings=[
+				('allegroHand/lib_cmd',PythonExpression(["'allegroHand_",LaunchConfiguration('NUM'),"/lib_cmd'"])),
+            			('allegroHand/joint_states',PythonExpression(["'allegroHand_",LaunchConfiguration('NUM'),"/joint_states'"])),
+                    		('allegroHand/joint_cmd',PythonExpression(["'allegroHand_",LaunchConfiguration('NUM'),"/joint_cmd'"])),
+                    		('allegroHand/envelop_torque',PythonExpression(["'allegroHand_",LaunchConfiguration('NUM'),"/envelop_torque'"])),
+				('allegroHand/tactile_sensors',PythonExpression(["'allegroHand_",LaunchConfiguration('NUM'),"/tactile_sensors'"])),
+                    		('forcechange',PythonExpression(["'allegroHand_",LaunchConfiguration('NUM'),"/force_chg'"])),
+                    		('timechange',PythonExpression(["'allegroHand_",LaunchConfiguration('NUM'),"/time_chg'"])),
+			]
         ),
         Node(
             package='robot_state_publisher',
@@ -139,5 +153,12 @@ def generate_launch_description():
             executable='allegro_hand_gui_node',
             output='screen',
             condition=IfCondition(LaunchConfiguration('GUI'))
+        ),
+		Node(
+            package='allegro_hand_isaacsim',
+            executable='allegro_hand_sim2real',
+            output='screen',
+			remappings=[('allegroHand/joint_cmd',PythonExpression(["'allegroHand_",LaunchConfiguration('NUM'),"/joint_cmd'"]))],		
+            condition=IfCondition(LaunchConfiguration('ISAAC'))
         )
     ])
