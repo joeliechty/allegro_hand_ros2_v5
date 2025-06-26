@@ -33,6 +33,22 @@ These packages are tested on ROS2 Humble(Ubuntu 22.04). It will likely not work 
 - allegro_hand_moveit : Provide MOVEIT2 package for Allegro Hand V5.
 - allegro_hand_gui : Node that control the allegro hand with gui program.
 - bhand : Library files for the predefined grasps and actions., available on 64 bit versions.
+  - ⚠ **Default: x86-64-bit.** If using a **ARM64**, update the symlink accordingly from [here](https://github.com/Wonikrobotics-git/Bhandlib_ARM).
+  
+  ## Topic description
+
+- Control
+	- /allegroHand_(NUM)/lib_cmd :  Hand command.
+ 	- /allegroHand_(NUM)/joint_cmd : Desired hand joint positions and control REAL Allegro Hand.
+  	- /allegroHand_(NUM)/force_chg : Change grasp force of grasping algorithm(grasp_3, grasp_4).
+  	- /allegroHand_(NUM)/time_chg : Change time of moving target positions of each joints.
+  	- /allegroHand_(NUM)/envelop_torque : Change torque of envelop command.
+- Joint States
+  	- /allegroHand_(NUM)/joint_states : REAL Allegro Hand current joint positions.
+  	- /allegroHand_sim/joint_states : ISAAC SIM Allegro Hand current joint positions.
+- Sensors
+  	- /allegroHand_(NUM)/tactile_sensors : REAL tactile sensors data {Finger1(Index),Finger2(Middle),Finger3(Pinky),Finger4(Thumb)}.
+  	- /allegroHand_sim/contact_sensors : ISAAC SIM contact sensors data {Finger1(Index),Finger2(Middle),Finger3(Pinky),Finger4(Thumb)}.
 
 ## Install the PCAN driver
 
@@ -83,7 +99,7 @@ colcon build
 5. Launch allegro main node.
 ~~~bash
 source install/setup.bash
-ros2 launch allegro_hand_controllers allegro_hand.launch.py HAND:=right TYPE:=A
+ros2 launch allegro_hand_controllers allegro_hand.launch.py HAND:=right TYPE:=B
 ~~~
 **You need to write your password to open CAN port**
 
@@ -156,6 +172,14 @@ Terminal 4:
 ros2 run allegro_hand_keyboards allegro_hand_keyboard --ros-args allegroHand_0/lib_cmd:=allegroHand_1/lib_cmd
 ~~~
 
+**These are example commands.You may need to change CAN_DEVICE, PORT and NUM arguments accroding to your system.**
+
+## ISAACSIM
+
+We now introuce two features —REAL2SIM and SIM2REAL—that integrate the Allegro Hand V5 with Isaac Sim.
+
+Please refer to the following guide for detailed information : [allegro_hand_isaacsim](https://github.com/Wonikrobotics-git/private_allegro_ros2_v5/tree/main/4finger/src/allegro_hand_isaacsim)
+
 ## MOVEIT2 
 
 These newly added feature function identically to their ROS1 counterparts. Please refer to the ROS1 manual for guidance.
@@ -168,3 +192,4 @@ You can find installation guide in here : [MOVEIT2](https://moveit.picknik.ai/ma
 
 These newly added feature function identically to their ROS1 counterparts. Please refer to the ROS1 manual for guidance.
 Our latest Allegro Hand V5 ROS1 package : [ROS1](https://github.com/Wonikrobotics-git/allegro_hand_ros_v5)
+
