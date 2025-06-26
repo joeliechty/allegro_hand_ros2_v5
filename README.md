@@ -178,7 +178,7 @@ ros2 run allegro_hand_keyboards allegro_hand_keyboard --ros-args allegroHand_0/l
 
 We now introuce two features —REAL2SIM and SIM2REAL—that integrate the Allegro Hand V5 with Isaac Sim.
 
-Please refer to the following guide for detailed information : [allegro_hand_isaacsim](https://github.com/Wonikrobotics-git/private_allegro_ros2_v5/tree/main/4finger/src/allegro_hand_isaacsim)
+Please refer to the following guide for detailed information : [allegro_hand_isaacsim](https://github.com/Wonikrobotics-git/allegro_hand_ros2_v5/tree/master-4finger/src/allegro_hand_isaacsim)
 
 ## MOVEIT2 
 
