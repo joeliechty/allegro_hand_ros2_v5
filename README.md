@@ -3,8 +3,8 @@
 <img src="https://github.com/user-attachments/assets/48640d7e-a8db-4758-9770-bcc1b3e68434" width="400" align="center">
 
 # Allegro Hand V5 ROS2
-> [!IMPORTANT]
-> **Date : 25/07/10**
+> **[!IMPORTANT]**
+> **Date : 25/07/10**</br>
 > **We have recently resolved an issue where some fingertip sensor values were delayed. To address this, we have uploaded the updated firmware at the link below. Please update the firmware and download and build the ROS2 package again.**
 
 
