@@ -4,7 +4,7 @@
 
 # Allegro Hand V5 ROS2
 > [!IMPORTANT]
-> We have recently resolved an issue where some fingertip sensor values were delayed. To address this, we have uploaded the updated firmware at the link below. Please update the firmware and download and build the ROS2 package again.
+> **We have recently resolved an issue where some fingertip sensor values were delayed. To address this, we have uploaded the updated firmware at the link below. Please update the firmware and download and build the ROS2 package again.**
 <
 
 This is the official release to control Allegro Hand V5 with ROS2(**Only V5 supported, V4 is not supported**). Mostly, it is based on the release of Allegro Hand V5 ROS1 package.
