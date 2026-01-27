@@ -105,6 +105,7 @@ void AHKeyboard::printUsage() {
   std::cout << "\tGrasp (4 fingers):\t\t'K'" << std::endl;
   std::cout << "\tGrasp (envelop):\t\t'E'" << std::endl;
   std::cout << "\tGravity compensation:\t\t'A'" << std::endl;
+  std::cout << "\tMotor calibration:\t\t'C'" << std::endl;
   std::cout << "\tMotors Off (free motion):\t'F'" << std::endl;
 
   std::cout << " -----------------------------------------------------------------------------" << std::endl;
@@ -217,6 +218,12 @@ void AHKeyboard::keyLoop()
       case KEYCODE_a:
         RCLCPP_DEBUG(this->get_logger(), "a_key: gravcomp");
         ss << "gravcomp";
+        dirty = true;
+        break;
+
+      case KEYCODE_c:
+        RCLCPP_DEBUG(this->get_logger(), "c_key: motor calibration");
+        ss << "calibration";
         dirty = true;
         break;
         
