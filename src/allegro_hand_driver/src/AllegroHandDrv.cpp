@@ -339,6 +339,11 @@ void AllegroHandDrv::_parseMessage(int id, int len, unsigned char* data)
             //printf("fingertip_sensor[%d] = %d, fingertip_sensor2[%d] = %d\n\n",findex, fingertip_sensor[findex], findex+1,fingertip_sensor[findex + 1]);
         }
         break;
+        case ID_CMD_Position_Calibration_R:
+        {
+            RCLCPP_INFO(rclcpp::get_logger("allegro_hand_drv"), "CAN: Motor Calibration Done");
+        }
+        break;
         default:
             RCLCPP_WARN(rclcpp::get_logger("allegro_hand_drv"), "unknown command %d, len %d", id, len);
             for(int nd=0; nd<len; nd++)
