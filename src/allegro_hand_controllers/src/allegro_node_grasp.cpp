@@ -99,7 +99,13 @@ void AllegroNodeGrasp::libCmdCallback(const std_msgs::msg::String::SharedPtr msg
     pBHand->SetJointDesiredPosition(desired_position);
     pBHand->SetMotionType(eMotionType_SAVE);
 
-  } else if (lib_cmd.find("moveit") == 0) {
+  } else if(lib_cmd.compare("calibration") == 0) {
+    ///motor calibration
+    //caution! : All motor encoder angle values will be set to 0.
+    command_calibration(_can_handle);
+
+  } 
+  else if (lib_cmd.find("moveit") == 0) {
 
   // Main behavior: apply the grasp directly from the map. Secondary behaviors can still be handled
   // normally (case-by-case basis), note these should *not* be in the map.
