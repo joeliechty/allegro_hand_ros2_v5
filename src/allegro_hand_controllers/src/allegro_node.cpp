@@ -159,7 +159,7 @@ void AllegroNode::updateController() {
         if ((fingertip_sensor[0] + fingertip_sensor[1] + fingertip_sensor[3]) > 200)
           f[0] = f[1] = f[2] = force_get;
         else
-          f[0] = f[1] = f[2] = 1.0f;
+          f[0] = f[1] = f[2] = 1.5f;
       }
 
 
