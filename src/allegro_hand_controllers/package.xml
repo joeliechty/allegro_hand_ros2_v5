@@ -20,6 +20,7 @@
     <depend>sensor_msgs</depend>
     <depend>robot_state_publisher</depend>
     <depend>yaml_cpp_vendor</depend>
+    <depend>ament_index_cpp</depend>
     <depend>launch</depend>
     <depend>launch_ros</depend>
     <!-- <run_depend>allegro_hand_description</run_depend> -->

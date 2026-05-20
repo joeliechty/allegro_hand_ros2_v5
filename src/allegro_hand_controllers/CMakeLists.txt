@@ -18,6 +18,7 @@ find_package(allegro_hand_driver REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(bhand REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 
 include_directories(${allegro_hand_driver_INCLUDE_DIRS})
 include_directories(include ${bhand_INCLUDE_DIRS})
@@ -34,7 +35,7 @@ target_link_libraries(allegro_node_grasp
   ${bhand_LIBRARIES}
   
 )
-ament_target_dependencies(allegro_node_grasp rclcpp sensor_msgs allegro_hand_driver yaml-cpp bhand)
+ament_target_dependencies(allegro_node_grasp rclcpp sensor_msgs allegro_hand_driver yaml-cpp bhand ament_index_cpp)
 #############
 ## Install ##
 #############
