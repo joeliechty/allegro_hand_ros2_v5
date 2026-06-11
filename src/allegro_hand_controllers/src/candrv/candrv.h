@@ -72,21 +72,22 @@ CANAPI_BEGIN
 /* CAN device API */
 /******************/
 
+int command_can_open_with_name(void*& ch, const char* dev_name);
 /**
  * @brief command_can_open_with_name
  * @param ch
  * @param dev_name
  * @return
  */
-int command_can_open_with_name(void*& ch, const char* dev_name);
 
+int command_can_open(void* ch);
 /**
  * @brief command_can_open
  * @param ch
  * @return
  */
-int command_can_open(void* ch);
 
+int command_can_open_ex(void* ch, int type, int index);
 /**
  * @brief command_can_open_ex
  * @param ch
@@ -94,51 +95,51 @@ int command_can_open(void* ch);
  * @param index
  * @return
  */
-int command_can_open_ex(void* ch, int type, int index);
 
+int command_can_flush(void* ch);
 /**
  * @brief command_can_flush
  * @param ch
  * @return
  */
-int command_can_flush(void* ch);
 
+int command_can_reset(void* ch);
 /**
  * @brief command_can_reset
  * @param ch
  * @return
  */
-int command_can_reset(void* ch);
 
+int command_can_close(void* ch);
 /**
  * @brief command_can_close
  * @param ch
  * @return
  */
-int command_can_close(void* ch);
 
+int command_can_set_id(void* ch, unsigned char can_id);
 /**
  * @brief command_can_set_id
  * @param ch
  * @param can_id
  * @return
  */
-int command_can_set_id(void* ch, unsigned char can_id);
 
+int command_servo_on(void* ch);
 /**
  * @brief command_servo_on
  * @param ch
  * @return
  */
-int command_servo_on(void* ch);
 
+int command_servo_off(void* ch);
 /**
  * @brief command_servo_off
  * @param ch
  * @return
  */
-int command_servo_off(void* ch);
 
+int command_set_torque(void* ch, int findex, short* pwm);
 /**
  * @brief command_set_torque
  * @param ch
@@ -146,13 +147,30 @@ int command_servo_off(void* ch);
  * @param pwm
  * @return
  */
-int command_set_torque(void* ch, int findex, short* pwm);
 
 int command_pick(void* ch);
+/**
+ * @brief command_pick
+ * @param ch
+ * @return
+ */
+
 int command_place(void* ch);
+/** 
+ * @brief command_pick
+ * @param ch
+ * @return
+ */
 
 int command_calibration(void* ch);
+/** 
+ * @brief command_calibration
+ * @param ch
+ * @return
+ */
 
+
+int command_set_pose(void* ch, int findex, short* jposition);
 /**
  * @brief command_set_pose
  * @param ch
@@ -160,8 +178,8 @@ int command_calibration(void* ch);
  * @param jposition
  * @return
  */
-int command_set_pose(void* ch, int findex, short* jposition);
-
+ 
+ int command_set_period(void* ch, short* period);
 /**
  * @brief command_set_period
  * @param ch
@@ -169,61 +187,67 @@ int command_set_pose(void* ch, int findex, short* jposition);
  *               If it is null, all periodic communication will stop.
  * @return
  */
-int command_set_period(void* ch, short* period);
 
+
+
+int command_set_device_id(void* ch, unsigned char did);
 /**
  * @brief command_set_device_id
  * @param ch
  * @param did
  * @return
  */
-int command_set_device_id(void* ch, unsigned char did);
 
+
+int command_set_rs485_baudrate(void* ch, unsigned int baudrate);
 /**
  * @brief 
  * @param ch
  * @param baudrate
  * @return
  */
-int command_set_rs485_baudrate(void* ch, unsigned int baudrate);
 
+
+int request_hand_information(void* ch);
 /**
  * @brief request_hand_information
  * @param ch
  * @return
  */
-int request_hand_information(void* ch);
 
+
+int request_hand_serial(void* ch);
 /**
  * @brief request_hand_serial
  * @param ch
  * @return
  */
-int request_hand_serial(void* ch);
 
+int request_finger_pose(void* ch, int findex);
 /**
  * @brief request_finger_pose
  * @param ch
  * @param findex [0,3]
  * @return
  */
-int request_finger_pose(void* ch, int findex);
 
+int request_imu_data(void* ch);
 /**
  * @brief request_imu_data
  * @param ch
  * @return
  */
-int request_imu_data(void* ch);
 
+int request_temperature(void* ch, int sindex);
 /**
  * @brief request_temperature
  * @param ch
  * @param sindex sensor index [0,3]
  * @return
  */
-int request_temperature(void* ch, int sindex);
 
+
+int can_write_message(void* ch, int id, int len, unsigned char* data, int blocking, int timeout_usec);
 /**
  * @brief can_write_message
  * @param ch
@@ -234,8 +258,9 @@ int request_temperature(void* ch, int sindex);
  * @param timeout_usec
  * @return
  */
-int can_write_message(void* ch, int id, int len, unsigned char* data, int blocking, int timeout_usec);
 
+
+int can_read_message(void* ch, int* id, int* len, unsigned char* data, int blocking, int timeout_usec);
 /**
  * @brief can_read_message
  * @param ch
@@ -246,8 +271,6 @@ int can_write_message(void* ch, int id, int len, unsigned char* data, int blocki
  * @param timeout_usec
  * @return
  */
-int can_read_message(void* ch, int* id, int* len, unsigned char* data, int blocking, int timeout_usec);
-
 CANAPI_END
 
 #endif // __ALLEGROHAND_CANDRV_H__
