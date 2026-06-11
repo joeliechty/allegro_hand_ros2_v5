@@ -1,5 +1,12 @@
 #include "allegro_node_grasp.h"
+#include "candrv/candrv.h"
 #include "allegro_hand_driver/AllegroHandDrv.h"
+#include <iostream>
+#include <fstream>
+#include <ament_index_cpp/get_package_share_directory.hpp>
+#include <yaml-cpp/yaml.h>
+
+int flag = 0;
 
 // The only topic specific to the 'grasp' controller is the envelop torque.
 const std::string ENVELOP_TORQUE_TOPIC = "allegroHand/envelop_torque";
@@ -8,7 +15,7 @@ std::string data_path;
 
 // Define a map from string (received message) to eMotionType (Bhand controller grasp).
 std::map<std::string, eMotionType> bhand_grasps = {
-        {"home",     eMotionType_HOME}, // home pose (direct)
+        {"home",     eMotionType_HOME},   // home position
         {"grasp_3",  eMotionType_GRASP_3},  // grasp with 3 fingers
         {"grasp_4",  eMotionType_GRASP_4},  // grasp with 4 fingers
         {"pinch_it", eMotionType_PINCH_IT},  // pinch, index & thumb
@@ -19,95 +26,78 @@ std::map<std::string, eMotionType> bhand_grasps = {
 };
 
 
-
-
-AllegroNodeGrasp::AllegroNodeGrasp() 
-        : AllegroNode() {
-
+AllegroNodeGrasp::AllegroNodeGrasp(const std::string nodeName)
+        : AllegroNode(nodeName),pBHand(nullptr) {
   initController(whichHand,whichType);
 
-  joint_cmd_sub = nh.subscribe(
-          DESIRED_STATE_TOPIC, 3, &AllegroNodeGrasp::setJointCallback, this);
-  lib_cmd_sub = nh.subscribe(
-          LIB_CMD_TOPIC, 1, &AllegroNodeGrasp::libCmdCallback, this);
-
-  envelop_torque_sub = nh.subscribe(
-          ENVELOP_TORQUE_TOPIC, 1, &AllegroNodeGrasp::envelopTorqueCallback,
-          this);
+  joint_cmd_sub = this->create_subscription<sensor_msgs::msg::JointState>(
+          DESIRED_STATE_TOPIC, 3, std::bind(&AllegroNodeGrasp::setJointCallback, this, std::placeholders::_1));
+  lib_cmd_sub = this->create_subscription<std_msgs::msg::String>(
+          LIB_CMD_TOPIC, 1, std::bind(&AllegroNodeGrasp::libCmdCallback, this, std::placeholders::_1));
+  envelop_torque_sub = this->create_subscription<std_msgs::msg::Float32>(
+          ENVELOP_TORQUE_TOPIC, 1, std::bind(&AllegroNodeGrasp::envelopTorqueCallback, this, std::placeholders::_1));
 }
 
 AllegroNodeGrasp::~AllegroNodeGrasp() {
   delete pBHand;
 }
 
-void AllegroNodeGrasp::libCmdCallback(const std_msgs::String::ConstPtr &msg) {
-   // Main behavior: apply the grasp directly from the map. Secondary behaviors can still be handled
-  // normally (case-by-case basis), note these should *not* be in the map. 
- 
-  ROS_INFO("CTRL: Heard: [%s]", msg->data.c_str());
-  const std::string lib_cmd = msg->data;
+void AllegroNodeGrasp::libCmdCallback(const std_msgs::msg::String::SharedPtr msg) {
+  RCLCPP_INFO(this->get_logger(), "CTRL: Heard: [%s]", msg->data.c_str());
+  const std::string lib_cmd = msg->data.c_str();
 
-  auto itr = bhand_grasps.find(msg->data);
+  // Main behavior: apply the grasp directly from the map. Secondary behaviors can still be handled
+  // normally (case-by-case basis), note these should *not* be in the map.
+ auto itr = bhand_grasps.find(msg->data);
   if (itr != bhand_grasps.end()) {
-    // Behavior pre-defined by Wonik Robotics.
-    if(lib_cmd.find("home") == 0 || lib_cmd.find("off") == 0)
-    {
+    pBHand->SetMotionType(itr->second);
+    RCLCPP_INFO(this->get_logger(), "motion type = %d", itr->second);
+
+    if (itr->second == 0 ||itr->second == 1||itr->second == 8) {
       command_place(_can_handle);
-    }
-    else{
+    } else {
       command_pick(_can_handle);
     }
-    pBHand->SetMotionType(itr->second);
-    ROS_INFO("motion type = %d", itr->second);
-   
-  } else if (lib_cmd.find("pdControl") == 0) {
-    // New behavior for V5.
-    // Can be any pose that saved in specified number of yaml pose file.
-    // Desired position only necessary if in PD Control mode.
-    
+
+ } else if (lib_cmd.find("pdControl") == 0) {
+
+  // Main behavior: apply the grasp directly from the map. Secondary behaviors can still be handled
+  // normally (case-by-case basis), note these should *not* be in the map.
+
+    RCLCPP_INFO(this->get_logger(), "CTRL: Heard: [pdControl]");
     std::string num_str = lib_cmd.substr(9);
 
     int pose_num = std::stoi(num_str);
-    ROS_INFO("PDControl Mode with pose number %d", pose_num);
+    RCLCPP_INFO(this->get_logger(), "PDControl Mode with pose number %d", pose_num);
 
-    std::string pkg_path = ros::package::getPath("allegro_hand_controllers");
+    std::string pkg_path = ament_index_cpp::get_package_share_directory("allegro_hand_controllers");
     std::string file_path = pkg_path + "/pose/pose" + std::to_string(pose_num) + ".yaml";
 
     std::ifstream infile(file_path);
     if (!infile.good()) {
-      ROS_WARN("Pose file does not exist. Please select a different command.");
+      RCLCPP_WARN(this->get_logger(), "Pose file does not exist. Please select a different command.");
       return;
     }
 
     YAML::Node node = YAML::LoadFile(file_path);
     std::vector<double> positions = node["position"].as<std::vector<double>>();
 
-    for (int i = 0; i < DOF_JOINTS && i < positions.size(); i++) {
+    for (int i = 0; i < DOF_JOINTS; i++) {
       desired_position[i] = positions[i];
     }
 
+    command_place(_can_handle);
     pBHand->SetJointDesiredPosition(desired_position);
     pBHand->SetMotionType(eMotionType_POSE_PD);
 
-  }   else if (lib_cmd.compare("moveit") == 0) {
-    std::string pkg_path = ros::package::getPath("allegro_hand_controllers");
-    std::string file_path = pkg_path + "/pose/pose_moveit.yaml";
+  } else if(lib_cmd.compare("sensor") == 0) {
+    for (int i = 0; i < DOF_JOINTS; i++)
+      desired_position[i] = current_position[i];
 
-    std::ifstream infile(file_path);
-    if (!infile.good()) {
-      ROS_WARN("Pose file does not exist. Please select a different command.");
-      return;
-    }
-
-    YAML::Node node = YAML::LoadFile(file_path);
-    std::vector<double> positions = node["position"].as<std::vector<double>>();
-
-    for (int i = 0; i < DOF_JOINTS && i < positions.size(); i++) {
-      desired_position[i] = positions[i];
-    }
+    command_pick(_can_handle);
 
     pBHand->SetJointDesiredPosition(desired_position);
-    pBHand->SetMotionType(eMotionType_POSE_PD);
+    pBHand->SetMotionType(eMotionType_SAVE);
 
   } else if(lib_cmd.compare("calibration") == 0) {
     ///motor calibration
@@ -115,91 +105,116 @@ void AllegroNodeGrasp::libCmdCallback(const std_msgs::String::ConstPtr &msg) {
     command_calibration(_can_handle);
 
   } 
+  else if (lib_cmd.find("moveit") == 0) {
+
+  // Main behavior: apply the grasp directly from the map. Secondary behaviors can still be handled
+  // normally (case-by-case basis), note these should *not* be in the map.
+
+    std::string pkg_path = ament_index_cpp::get_package_share_directory("allegro_hand_controllers");
+    std::string file_path = pkg_path + "/pose/pose_moveit.yaml";
+
+    std::ifstream infile(file_path);
+    if (!infile.good()) {
+      RCLCPP_WARN(this->get_logger(), "Pose file does not exist. Please select a different command.");
+      return;
+    }
+
+    YAML::Node node = YAML::LoadFile(file_path);
+    std::vector<double> positions = node["position"].as<std::vector<double>>();
+
+    for (int i = 0; i < DOF_JOINTS; i++) {
+      desired_position[i] = positions[i];
+    }
+    
+    command_place(_can_handle);
+    pBHand->SetJointDesiredPosition(desired_position);
+    pBHand->SetMotionType(eMotionType_POSE_PD);
+  }
   else {
-       std::string pkg_path = ros::package::getPath("allegro_hand_controllers");
+    std::string pkg_path = ament_index_cpp::get_package_share_directory("allegro_hand_controllers");
         std::string file_path = pkg_path + "/pose/" + lib_cmd + ".yaml";
 
-        std::ifstream infile(file_path);
-        if (!infile.good()) {
-            ROS_WARN("Unknown commanded grasp: %s.", lib_cmd.c_str());
-            return;
-        }
-        YAML::Node node = YAML::LoadFile(file_path);
-        std::vector<double> positions = node["position"].as<std::vector<double>>();
+    std::ifstream infile(file_path);
+    if (!infile.good()) {
+      RCLCPP_WARN(this->get_logger(), "Pose file does not exist. Please select a different command.");
+      return;
+    }
+    YAML::Node node = YAML::LoadFile(file_path);
+    std::vector<double> positions = node["position"].as<std::vector<double>>();
 
-        for (int i = 0; i < DOF_JOINTS && i < positions.size(); i++) {
-            desired_position[i] = positions[i];
-        }
-        pBHand->SetJointDesiredPosition(desired_position);
-        pBHand->SetMotionType(eMotionType_POSE_PD);
+    for (int i = 0; i < DOF_JOINTS; i++) {
+        desired_position[i] = positions[i];
+    }
+
+    command_place(_can_handle);
+    pBHand->SetJointDesiredPosition(desired_position);
+    pBHand->SetMotionType(eMotionType_POSE_PD);
     //ROS_WARN("Unknown commanded grasp: %s.", lib_cmd.c_str());
   }
-
 }
 
 // Called when a desired joint position message is received
-void AllegroNodeGrasp::setJointCallback(const sensor_msgs::JointState &msg) {
+void AllegroNodeGrasp::setJointCallback(const sensor_msgs::msg::JointState::SharedPtr msg) {
+  
   mutex->lock();
 
   for (int i = 0; i < DOF_JOINTS; i++)
-    desired_position[i] = msg.position[i];
+    desired_position[i] = msg->position[i];
   mutex->unlock();
+
+ // command_place(_can_handle);
 
   pBHand->SetJointDesiredPosition(desired_position);
   pBHand->SetMotionType(eMotionType_JOINT_PD);
+  
 }
 
 // The grasp controller can set the desired envelop grasp torque by listening to
 // Float32 messages on ENVELOP_TORQUE_TOPIC ("allegroHand/envelop_torque").
-void AllegroNodeGrasp::envelopTorqueCallback(const std_msgs::Float32 &msg) {
-  const double torque = msg.data;
-  ROS_INFO("Setting envelop torque to %.3f.", torque);
+void AllegroNodeGrasp::envelopTorqueCallback(const std_msgs::msg::Float32::SharedPtr msg) {
+  
+  const double torque = msg->data;
+  RCLCPP_INFO(this->get_logger(), "Setting envelop torque to %.3f.", torque);
   pBHand->SetEnvelopTorqueScalar(torque);
+  
 }
 
 void AllegroNodeGrasp::computeDesiredTorque() {
   // compute control torque using Bhand library
+  
   pBHand->SetJointPosition(current_position_filtered);
 
   // BHand lib control updated with time stamp
-  pBHand->UpdateControl((double) frame * ALLEGRO_CONTROL_TIME_INTERVAL);
+  pBHand->UpdateControl(static_cast<double>(frame) * ALLEGRO_CONTROL_TIME_INTERVAL);
 
-  // BHand lib set grasping force
-	pBHand->SetGraspingForce(f);
-
-	pBHand->GetFKResult(x,y,z);
+  // Set grasping force and get FK result (if needed)
+  pBHand->SetGraspingForce(f);
+  pBHand->GetFKResult(x, y, z);
 
   // Necessary torque obtained from Bhand lib
   pBHand->GetJointTorque(desired_torque);
-
+  
 }
 
-void AllegroNodeGrasp::initController(const std::string &whichHand,const std::string &whichType) {
+void AllegroNodeGrasp::initController(const std::string &whichHand, const std::string &whichType) {
   // Initialize BHand controller
-
-  if (whichHand.compare("left") == 0) {
+  if (whichHand == "left") {
     pBHand = new BHand(eHandType_Left);
-    ROS_WARN("CTRL: Left Allegro Hand controller initialized.");
-
-  }
-  else {
+    RCLCPP_WARN(this->get_logger(), "CTRL: Left Allegro Hand controller initialized.");
+  } else {
     pBHand = new BHand(eHandType_Right);
-    ROS_WARN("CTRL: Right Allegro Hand controller initialized.");
+    RCLCPP_WARN(this->get_logger(), "CTRL: Right Allegro Hand controller initialized.");
   }
 
 
-
-  if (whichType.compare("A") == 0){
-    pBHand->SetMotionType(eHardwareType_A);
-    ROS_WARN("CTRL: A-Type Allegro Hand controller initialized.");
-  }
-
-  else{
-    pBHand->SetMotionType(eHardwareType_B);
-    ROS_WARN("CTRL: B-Type Allegro Hand controller initialized.");
+  if(whichType == "A"){
+    pBHand->GetType(eHardwareType_A);
+    RCLCPP_WARN(this->get_logger(), "CTRL: A-Type Allegro Hand controller initialized.");
   } 
-
-
+  else{
+    pBHand->GetType(eHardwareType_B);
+    RCLCPP_WARN(this->get_logger(), "CTRL: B-Type Allegro Hand controller initialized.");
+  } 
 
   pBHand->SetTimeInterval(ALLEGRO_CONTROL_TIME_INTERVAL);
   pBHand->SetMotionType(eMotionType_NONE);
@@ -208,39 +223,42 @@ void AllegroNodeGrasp::initController(const std::string &whichHand,const std::st
   for (int i = 0; i < DOF_JOINTS; i++)
     desired_position[i] = current_position[i];
 
-  printf("*************************************\n");
-  printf("         Grasp (BHand) Method        \n");
-  printf("-------------------------------------\n");
-  printf("         Every command works.        \n");
-  printf("*************************************\n");
+  RCLCPP_INFO(this->get_logger(), "*************************************");
+  RCLCPP_INFO(this->get_logger(), "         Grasp (BHand) Method        ");
+  RCLCPP_INFO(this->get_logger(), "-------------------------------------");
+  RCLCPP_INFO(this->get_logger(), "         Every command works.        ");
+  RCLCPP_INFO(this->get_logger(), "*************************************");
 }
 
 void AllegroNodeGrasp::doIt(bool polling) {
+  auto this_node = std::shared_ptr<AllegroNodeGrasp>(this);
+  int control_cycle = (int)(1/ALLEGRO_CONTROL_TIME_INTERVAL);
+  rclcpp::Rate rate(control_cycle);
   if (polling) {
-    ROS_INFO("Polling = true.");
-    while (ros::ok()) {
+    RCLCPP_INFO(this->get_logger(), " Polling = true.");
+    while (rclcpp::ok()) {
       updateController();
-      ros::spinOnce();
+      rclcpp::spin_some(this_node);
+      rate.sleep();
     }
   } else {
-    ROS_INFO("Polling = false.");
 
-    // Timer callback (not recommended).
-    ros::Timer timer = startTimerCallback();
-    ros::spin();
+    RCLCPP_INFO(this->get_logger(), "Polling = false.");
+    // Timer callback
+    rclcpp::TimerBase::SharedPtr timer = startTimerCallback();
+    rclcpp::spin(this_node);
   }
 }
 
 int main(int argc, char **argv) {
+  auto clean_argv = rclcpp::init_and_remove_ros_arguments(argc, argv); 
 
-  ros::init(argc, argv, "allegro_hand_core_grasp");
-  AllegroNodeGrasp grasping;
-
-  bool polling = true;
-
-  ROS_INFO("Start controller with polling = %d", polling);
-
-  grasping.doIt(polling);
-
-  return 0;
+  bool polling = false;
+  if (clean_argv.size() > 1 && clean_argv[1] == std::string("true")) {
+    polling = true;
+  }
+  //printf("Start controller with polling = %d\n", polling);
+  //bool is_sim = std::find(clean_argv.begin(), clean_argv.end(), "--sim") != clean_argv.end();
+  AllegroNodeGrasp allegroNode("allegro_node_grasp");
+  allegroNode.doIt(polling);
 }

@@ -1,73 +1,66 @@
 //
 // Created by felixd on 10/1/15.
 //
-// Modified by Hibo on 2024/07/10.
 
 #ifndef PROJECT_ALLEGRO_NODE_COMMON_H
 #define PROJECT_ALLEGRO_NODE_COMMON_H
 
 // Defines DOF_JOINTS.
-#include "allegro_hand_driver/AllegroHandDrv.h"
+#include <allegro_hand_driver/AllegroHandDrv.h>
 using namespace allegro;
 
 #include <string>
-#include <boost/thread/thread.hpp>
-
-#include <visualization_msgs/Marker.h>
-#include <std_msgs/Int32.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-
-#include "ros/ros.h"
-#include "sensor_msgs/JointState.h"
-#include "std_msgs/String.h"
-#include "std_msgs/Float32.h"
-#include "fstream"
+#include <chrono>
+#include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/float32.hpp>
+#include "sensor_msgs/msg/joint_state.hpp"
+#include "std_msgs/msg/string.hpp"
+#include "std_msgs/msg/u_int8_multi_array.hpp"
+#include "std_msgs/msg/int32_multi_array.hpp"
 #include "bhand/BHand.h"
 #include <vector>
+
 // Forward declaration.
 class AllegroHandDrv;
-
-// Set control time interval
 #define ALLEGRO_CONTROL_TIME_INTERVAL 0.002
 
 // Topic names: current & desired JointState, named grasp to command.
 const std::string JOINT_STATE_TOPIC = "allegroHand/joint_states";
-const std::string DESIRED_STATE_TOPIC = "allegroHand/joint_cmd"; 
-const std::string LIB_CMD_TOPIC = "allegroHand/lib_cmd";  
+const std::string DESIRED_STATE_TOPIC = "allegroHand/joint_cmd";
+const std::string LIB_CMD_TOPIC = "allegroHand/lib_cmd";
+const std::string JOINT_TEMPERATURE_TOPIC = "allegroHand/joint_tempeartures";
+const std::string TACTILE_SENSOR_TOPIC = "allegroHand/tactile_sensors";
 
-
-class AllegroNode {
+class AllegroNode: public rclcpp::Node {
  public:
 
-  AllegroNode(bool sim = false);
+  AllegroNode(const std::string nodeName, bool sim = false);
 
   virtual ~AllegroNode();
 
   void publishData();
 
-  void desiredStateCallback(const sensor_msgs::JointState &desired);
+  void desiredStateCallback(const sensor_msgs::msg::JointState::SharedPtr desired);
 
-  void ControltimeCallback(const std_msgs::Float32::ConstPtr& msg);
+  void ControltimeCallback(const std_msgs::msg::Float32::SharedPtr msg);
 
-  void GraspforceCallback(const std_msgs::Float32::ConstPtr& msg);
+  void GraspforceCallback(const std_msgs::msg::Float32::SharedPtr msg);
 
   virtual void updateController();
 
   // This is the main method that must be implemented by the various
   // controller nodes.
   virtual void computeDesiredTorque() {
-    ROS_ERROR("Called virtual function!");
+    RCLCPP_ERROR(rclcpp::get_logger("allegro_node"), "Called virtual function!");
   };
 
-  ros::Timer startTimerCallback();
+  rclcpp::TimerBase::SharedPtr startTimerCallback();
 
-  void timerCallback(const ros::TimerEvent &event);
-
-  void Rviz_Arrow();
-
-  double desired_position[DOF_JOINTS] = {0.0};
+  void timerCallback();
 
  protected:
+
+  double position_offset[DOF_JOINTS] = {0.0};
 
   double current_position[DOF_JOINTS] = {0.0};
   double previous_position[DOF_JOINTS] = {0.0};
@@ -81,42 +74,49 @@ class AllegroNode {
 
   double desired_torque[DOF_JOINTS] = {0.0};
 
+  int status_interval = 0;
+
   std::string whichHand;  // Right or left hand.
-  std::string whichType;  // Right or left hand.
+
+  std::string whichType;  // non-Geared or Geared hand.
 
   // ROS stuff
-  ros::NodeHandle nh;
-  ros::Publisher  joint_state_pub;
-  ros::Publisher  marker_pub;
-  ros::Subscriber joint_cmd_sub;
-  ros::Subscriber time_sub;
-  ros::Subscriber force_sub;
+  rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_state_pub;
+  rclcpp::Publisher<std_msgs::msg::Int32MultiArray>::SharedPtr tactile_sensor_pub;
+  rclcpp::Time t_last_pub;
+  rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_cmd_sub;
+  rclcpp::Publisher<std_msgs::msg::UInt8MultiArray>::SharedPtr joint_temperature_pub;
 
+  rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr time_sub;
+  rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr force_sub;
+  bool joint_temperature_pending;
+  OnSetParametersCallbackHandle::SharedPtr param_callback_handle;
   // Store the current and desired joint states.
-  sensor_msgs::JointState current_joint_state;
-  sensor_msgs::JointState desired_joint_state;
+  sensor_msgs::msg::JointState current_joint_state;
+  sensor_msgs::msg::JointState desired_joint_state;
+  std_msgs::msg::UInt8MultiArray current_joint_temperature;
+
+  std_msgs::msg::Int32MultiArray tactile_sensor;
 
   // ROS Time
-  ros::Time tstart;
-  ros::Time tnow;
+  rclcpp::Time tstart;
+  rclcpp::Time tnow;
   double dt;
 
   // CAN device
   allegro::AllegroHandDrv *canDevice;
-  boost::mutex *mutex;
+  std::mutex *mutex;
 
   // Flags
   int lEmergencyStop = 0;
   long frame = 0;
 
-  // RVIZ marker
-  visualization_msgs::Marker marker1, marker2, marker3, marker4;
+  double motion_time = 1.0;//
+  double force_get = 2.0f;//
 
   BHand *pBHand = NULL;
-
 };
 
-double motion_time = 0.5;//
-double force_get = 2.0f;//
+
 
 #endif //PROJECT_ALLEGRO_NODE_COMMON_H
