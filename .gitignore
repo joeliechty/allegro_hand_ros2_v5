@@ -1,0 +1,97 @@
+# --- Colcon / ROS 2 build artifacts ---
+build/
+install/
+log/
+logs/
+devel/
+.catkin_tools/
+COLCON_IGNORE
+AMENT_IGNORE
+CATKIN_IGNORE
+
+# --- CMake ---
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile.cmake
+compile_commands.json
+CTestTestfile.cmake
+Testing/
+
+# --- Compiled objects / libs ---
+# (bhand/lib/libBHand.so is a vendored binary and is tracked on purpose)
+*.o
+*.obj
+*.lo
+*.slo
+*.a
+*.la
+*.so.*
+*.dylib
+*.dll
+*.d
+!bhand/lib/libBHand.so
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+.Python
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Editors / IDEs ---
+.vscode/*
+!.vscode/c_cpp_properties.json
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/extensions.json
+*.vc.db
+*.vc.db-*
+*.vc.db.lock
+.idea/
+*.iml
+.cache/
+.clangd/
+.ccls-cache/
+
+# --- Isaac Sim / USD ---
+.thumbs/
+*.usd.lock
+omni.*.log
+
+# --- OS cruft ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# --- Editor backups / temp ---
+*~
+*.swp
+*.swo
+*.bak
+*.orig
+*.rej
+*.tmp
+\#*\#
+.\#*
+
+# --- Logs & core dumps ---
+*.log
+core
+core.[0-9]*
+
+
+.vscode/
