@@ -56,6 +56,12 @@ install(DIRECTORY scripts/
   FILES_MATCHING PATTERN "*.sh"
 )
 
+# Runnable python nodes go to lib/ so `ros2 run` and launch can find them.
+install(PROGRAMS
+  scripts/allegro_mock_node.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 install(DIRECTORY meshes/
   DESTINATION share/${PROJECT_NAME}/meshes
   FILES_MATCHING PATTERN "*.stl"
@@ -69,6 +75,7 @@ install(DIRECTORY pose/
 install(DIRECTORY urdf/
   DESTINATION share/${PROJECT_NAME}/urdf
   FILES_MATCHING PATTERN "*.urdf"
+  PATTERN "*.xacro"
   PATTERN "*.rviz"
 )
 

@@ -23,6 +23,8 @@
     <depend>ament_index_cpp</depend>
     <depend>launch</depend>
     <depend>launch_ros</depend>
+    <!-- the urdf/ descriptions are xacro macros, expanded at launch time -->
+    <exec_depend>xacro</exec_depend>
     <!-- <run_depend>allegro_hand_description</run_depend> -->
     <!-- <run_depend>allegro_hand_parameters</run_depend> -->
 
